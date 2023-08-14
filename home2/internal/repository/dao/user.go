@@ -2,8 +2,15 @@ package dao
 
 import (
 	"context"
+	"errors"
+	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
 	"time"
+)
+
+var (
+	ErrUseDuplicateEmail = errors.New("邮箱冲突")
+	ErrUserNotFund       = gorm.ErrRecordNotFound
 )
 
 type UserDao struct {
@@ -16,19 +23,36 @@ func NewUserDao(db *gorm.DB) *UserDao {
 	}
 }
 
+func (dao *UserDao) FindByEmail(ctx context.Context, email string) (User, error) {
+	var u User
+	err := dao.db.WithContext(ctx).Where("email = ?", email).First(&u).Error
+	//第二种写法
+	//err := dao.db.WithContext(ctx).Where(&u, "email = ?", email).Error
+	return u, err
+}
+
 func (dao *UserDao) Insert(ctx context.Context, u User) error {
 	//存更新时间
 	now := time.Now().UnixMilli()
 	u.CreateTime = now
 	u.UpdateTime = now
-	return dao.db.Create(&u).Error
+	err := dao.db.WithContext(ctx).Create(&u).Error
+	if mysqlErr, ok := err.(*mysql.MySQLError); ok {
+		const uniqueConflictsErrNo uint16 = 1062
+		if mysqlErr.Number == uniqueConflictsErrNo {
+			//邮箱冲突
+			return ErrUseDuplicateEmail
+		}
+	}
+	return err
 }
 
 // User 对标数据库
 // 有人叫model， 也有叫 PO(persistent object)
 type User struct {
-	Id       int64
-	Email    string
+	Id int64 `gorm:"primaryKey,autoIncrement"`
+	//唯一的值
+	Email    string `gorm:"unique"`
 	Password string
 
 	//创建时间 -毫秒数
