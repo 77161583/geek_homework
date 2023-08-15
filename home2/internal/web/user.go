@@ -2,6 +2,7 @@ package web
 
 import (
 	regexp "github.com/dlclark/regexp2"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"home2/internal/domain"
 	"home2/internal/service"
@@ -35,6 +36,7 @@ func (u *UserHandler) RegisterRoutes(serve *gin.Engine) {
 	ug.POST("login", u.Login)
 	ug.POST("signup", u.SignUp)
 	ug.POST("edit", u.Edit)
+	ug.POST("profile", u.Profile)
 }
 
 func (u *UserHandler) SignUp(ctx *gin.Context) {
@@ -97,7 +99,7 @@ func (u *UserHandler) Login(ctx *gin.Context) {
 	if err := ctx.Bind(&req); err != nil {
 		return
 	}
-	err := u.svc.Login(ctx, req.Email, req.Password)
+	user, err := u.svc.Login(ctx, req.Email, req.Password)
 	if err == service.ErrInvalidUserOrPassword {
 		ctx.String(http.StatusOK, "用户名/邮箱或密码不对")
 		return
@@ -106,6 +108,13 @@ func (u *UserHandler) Login(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "系统错误")
 		return
 	}
+
+	//登陆成功之后获取sessions
+	//登陆之后保存登陆信息 步骤2
+	sess := sessions.Default(ctx)
+	//设置seesion的值
+	sess.Set("userId", user.Id)
+	sess.Save()
 	ctx.String(http.StatusOK, "登陆成功")
 	return
 
@@ -113,4 +122,8 @@ func (u *UserHandler) Login(ctx *gin.Context) {
 
 func (u *UserHandler) Edit(ctx *gin.Context) {
 
+}
+
+func (u *UserHandler) Profile(ctx *gin.Context) {
+	ctx.String(http.StatusOK, "这是你的profile")
 }

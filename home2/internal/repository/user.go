@@ -24,7 +24,7 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (domain.
 	if err != nil {
 		return domain.User{}, err
 	}
-	return domain.User{Email: u.Email, Password: u.Password}, nil
+	return domain.User{Id: u.Id, Email: u.Email, Password: u.Password}, nil
 }
 
 func (r *UserRepository) Created(ctx context.Context, u domain.User) error {
@@ -34,6 +34,6 @@ func (r *UserRepository) Created(ctx context.Context, u domain.User) error {
 	})
 }
 
-func (r *UserRepository) FindById() {
-
+func (r *UserRepository) FindById(ctx context.Context, id int64) (domain.User, error) {
+	return r.dap.
 }

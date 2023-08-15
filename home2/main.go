@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -8,6 +10,7 @@ import (
 	"home2/internal/repository/dao"
 	"home2/internal/service"
 	"home2/internal/web"
+	"home2/internal/web/middleware"
 )
 
 func main() {
@@ -24,6 +27,11 @@ func initWebServer() *gin.Engine {
 	server := gin.Default()
 	//跨域可以在这里处理...
 
+	//登陆之后保存登陆信息 步骤1
+	store := cookie.NewStore([]byte("secret"))
+	server.Use(sessions.Sessions("mysession", store))
+	//登陆之后的校验 - 登陆之后保存登陆信息 步骤3
+	server.Use(middleware.NewLoginMiddlewareBuilder().Build())
 	return server
 }
 

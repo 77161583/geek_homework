@@ -47,6 +47,10 @@ func (dao *UserDao) Insert(ctx context.Context, u User) error {
 	return err
 }
 
+func (dao *UserDao) FindById(ctx context.Context, id int64) error {
+	return nil
+}
+
 // User 对标数据库
 // 有人叫model， 也有叫 PO(persistent object)
 type User struct {
