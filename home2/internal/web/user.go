@@ -14,6 +14,7 @@ type UserHandler struct {
 	svc         *service.UserService
 	emailExp    *regexp.Regexp
 	passwordExp *regexp.Regexp
+	birthdayExp *regexp.Regexp
 }
 
 func NewUserHandler(svc *service.UserService) *UserHandler {
@@ -21,13 +22,16 @@ func NewUserHandler(svc *service.UserService) *UserHandler {
 	const (
 		emailRegExpPattern    = `^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$`
 		passwordRegExpPattern = `^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,}$`
+		birthdayRegExpPattern = `^\d{4}-\d{2}-\d{2}$`
 	)
 	emailRegExp := regexp.MustCompile(emailRegExpPattern, 0)
 	passwordRegExp := regexp.MustCompile(passwordRegExpPattern, 0)
+	birthdayRegExp := regexp.MustCompile(birthdayRegExpPattern, 0)
 	return &UserHandler{
 		svc:         svc,
 		emailExp:    emailRegExp,
 		passwordExp: passwordRegExp,
+		birthdayExp: birthdayRegExp,
 	}
 }
 
@@ -121,9 +125,82 @@ func (u *UserHandler) Login(ctx *gin.Context) {
 }
 
 func (u *UserHandler) Edit(ctx *gin.Context) {
-
+	//定义接收数据
+	type UserDataReq struct {
+		UserId       int64  `json:"userId"`
+		NickName     string `json:"nickName"`
+		Birthday     string `json:"birthday"`
+		Introduction string `json:"introduction"`
+	}
+	//实例化一个req
+	var req UserDataReq
+	//用bing 获取数据
+	if err := ctx.Bind(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "请求数据绑定失败"})
+	}
+	if req.UserId == 0 {
+		ctx.String(http.StatusOK, "用户Id丢失，无法编辑")
+		return
+	}
+	//查看该条用户是否存在
+	UserData, _ := u.svc.FindById(ctx, req.UserId)
+	if UserData.Id == 0 {
+		ctx.String(http.StatusOK, "没有改用户，无法编辑")
+		return
+	}
+	//参数验证
+	if req.NickName != "" {
+		if len(req.NickName) < 6 || len(req.NickName) > 30 {
+			ctx.String(http.StatusOK, "昵称大小需要保持2~10个汉字")
+			return
+		}
+	}
+	if req.Birthday != "" {
+		isBirthday, _ := u.birthdayExp.MatchString(req.Birthday)
+		if !isBirthday {
+			ctx.String(http.StatusOK, "生日日期格式不正确，应为YYYY-MM-DD格式")
+			return
+		}
+		if req.Introduction == "" {
+			ctx.String(http.StatusOK, "个人简介不能为空")
+			return
+		}
+	}
+	//调用service
+	err := u.svc.Edit(ctx, domain.User{
+		Id:           req.UserId,
+		NickName:     req.NickName,
+		Birthday:     req.Birthday,
+		Introduction: req.Introduction,
+	})
+	if err != nil {
+		ctx.String(http.StatusOK, "修改失败")
+		return
+	}
+	//ctx.JSON(http.StatusOK, UserData)
+	ctx.String(http.StatusOK, "修改成功")
 }
 
 func (u *UserHandler) Profile(ctx *gin.Context) {
-	ctx.String(http.StatusOK, "这是你的profile")
+	//定义接收数据
+	type UserAllDataReq struct {
+		UserId int64 `json:"userId"`
+	}
+	//实例化一个req
+	var reqSelect UserAllDataReq
+	//用bing 获取数据
+	if err := ctx.Bind(&reqSelect); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "请求数据绑定失败"})
+	}
+	if reqSelect.UserId == 0 {
+		ctx.String(http.StatusOK, "用户Id丢失，无法编辑")
+		return
+	}
+	//查看该条用户是否存在
+	UserData, _ := u.svc.FindById(ctx, reqSelect.UserId)
+	if UserData.Id == 0 {
+		ctx.String(http.StatusOK, "未找到该用户")
+		return
+	}
+	ctx.JSON(http.StatusOK, UserData)
 }

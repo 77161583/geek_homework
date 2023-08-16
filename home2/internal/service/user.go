@@ -10,6 +10,7 @@ import (
 
 var ErrUseDuplicateEmail = repository.ErrUseDuplicateEmail
 var ErrInvalidUserOrPassword = errors.New("账号/邮箱或密码不对")
+var ErrUserDataNotFund = errors.New("该用户不存在！")
 
 type UserService struct {
 	repo *repository.UserRepository
@@ -57,4 +58,21 @@ func (svc *UserService) Login(ctx context.Context, email, password string) (doma
 
 func (svc *UserService) Profile(ctx context.Context, id int64) (domain.User, error) {
 	return svc.repo.FindById(ctx, id)
+}
+
+func (svc *UserService) FindById(ctx context.Context, userId int64) (domain.User, error) {
+	//查看用户是否存在
+	u, err := svc.repo.FindById(ctx, userId)
+	if err == repository.ErrUserNotFund {
+		return domain.User{}, ErrUserDataNotFund
+	}
+	if err != nil {
+		return domain.User{}, err
+	}
+	//正常返回该条数据
+	return u, err
+}
+
+func (svc *UserService) Edit(ctx context.Context, u domain.User) error {
+	return svc.repo.Edit(ctx, u)
 }

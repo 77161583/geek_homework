@@ -31,6 +31,12 @@ func (dao *UserDao) FindByEmail(ctx context.Context, email string) (User, error)
 	return u, err
 }
 
+func (dao *UserDao) FindById(ctx context.Context, userId int64) (User, error) {
+	var u User
+	err := dao.db.WithContext(ctx).Where("id = ?", userId).First(&u).Error
+	return u, err
+}
+
 func (dao *UserDao) Insert(ctx context.Context, u User) error {
 	//存更新时间
 	now := time.Now().UnixMilli()
@@ -47,8 +53,36 @@ func (dao *UserDao) Insert(ctx context.Context, u User) error {
 	return err
 }
 
-func (dao *UserDao) FindById(ctx context.Context, id int64) error {
-	return nil
+func (dao *UserDao) Edit(ctx context.Context, u User) error {
+	//存更新时间
+	now := time.Now().UnixMilli()
+	//u.CreateTime = now
+	u.UpdateTime = now
+
+	// 构建需要更新的字段映射
+	updateFields := map[string]interface{}{
+		"UpdateTime":   now,
+		"NickName":     u.NickName,
+		"Birthday":     u.Birthday,
+		"Introduction": u.Introduction,
+	}
+
+	// 构建更新条件
+	updateCondition := "id = ?"
+	updateParams := []interface{}{u.Id}
+
+	// 执行更新操作
+	err := dao.db.WithContext(ctx).Model(&User{}).Where(updateCondition, updateParams...).Updates(updateFields).Error
+	if err != nil {
+		if mysqlErr, ok := err.(*mysql.MySQLError); ok {
+			const uniqueConflictsErrNo uint16 = 1062
+			if mysqlErr.Number == uniqueConflictsErrNo {
+				// 邮箱冲突
+				return ErrUseDuplicateEmail
+			}
+		}
+	}
+	return err
 }
 
 // User 对标数据库
@@ -56,9 +90,11 @@ func (dao *UserDao) FindById(ctx context.Context, id int64) error {
 type User struct {
 	Id int64 `gorm:"primaryKey,autoIncrement"`
 	//唯一的值
-	Email    string `gorm:"unique"`
-	Password string
-
+	Email        string `gorm:"unique"`
+	Password     string
+	NickName     string
+	Birthday     string
+	Introduction string
 	//创建时间 -毫秒数
 	CreateTime int64
 	UpdateTime int64
