@@ -124,6 +124,7 @@ func (u *UserHandler) Login(ctx *gin.Context) {
 
 }
 
+// Edit 作业 根据用户id修改数据
 func (u *UserHandler) Edit(ctx *gin.Context) {
 	//定义接收数据
 	type UserDataReq struct {
@@ -181,6 +182,7 @@ func (u *UserHandler) Edit(ctx *gin.Context) {
 	ctx.String(http.StatusOK, "修改成功")
 }
 
+// Profile 作业回显
 func (u *UserHandler) Profile(ctx *gin.Context) {
 	//定义接收数据
 	type UserAllDataReq struct {
