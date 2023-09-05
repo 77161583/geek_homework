@@ -9,6 +9,7 @@ import (
 	"home2/internal/domain"
 	"home2/internal/service"
 	"net/http"
+	"time"
 )
 
 // UserHandler 定义和跟用户有关的路由
@@ -43,7 +44,7 @@ func (u *UserHandler) RegisterRoutes(serve *gin.Engine) {
 	ug.POST("login", u.LoginJWT)
 	ug.POST("signup", u.SignUp)
 	ug.POST("edit", u.Edit)
-	ug.POST("profile", u.Profile)
+	ug.POST("profile", u.ProfileJWT)
 }
 
 func (u *UserHandler) SignUp(ctx *gin.Context) {
@@ -118,7 +119,15 @@ func (u *UserHandler) LoginJWT(ctx *gin.Context) {
 
 	//步骤2  使用JWT 设置登录状态
 	//生成一个 JWT token
-	token := jwt.New(jwt.SigningMethodHS512)
+
+	claims := UserClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute)),
+		},
+		Uid:       user.Id,
+		UserAgent: ctx.Request.UserAgent(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
 	tokenStr, err := token.SignedString([]byte("iF9BZyZtFYktKQtS9bsJAByiT1aVyt06"))
 	if err != nil {
 		ctx.String(http.StatusInternalServerError, "系统错误")
@@ -129,7 +138,7 @@ func (u *UserHandler) LoginJWT(ctx *gin.Context) {
 	fmt.Println(tokenStr)
 	fmt.Println(user)
 
-	ctx.String(http.StatusOK, "登陆成功11")
+	ctx.String(http.StatusOK, "登陆成功")
 	return
 
 }
@@ -259,4 +268,26 @@ func (u *UserHandler) Profile(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, UserData)
+}
+
+func (u *UserHandler) ProfileJWT(ctx *gin.Context) {
+	c, ok := ctx.Get("claims")
+	if !ok {
+		ctx.String(http.StatusOK, "系统错误")
+		return
+	}
+	//断言
+	claims, ok := c.(*UserClaims)
+	if !ok {
+		ctx.String(http.StatusOK, "系统错误")
+		return
+	}
+	println(claims.Uid)
+}
+
+type UserClaims struct {
+	jwt.RegisteredClaims
+	//声明自己要放进token里的数据
+	Uid       int64
+	UserAgent string
 }

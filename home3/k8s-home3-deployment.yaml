@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: home3
+spec:
+  #部署3个  副本数量
+  replicas: 3
+  selector:
+    matchLabels:
+      app: home3
+  # template 描述你的 pod 是什么样的
+  template:
+    metadata:
+      name: home3
+      labels:
+        app: home3
+  # pod 的具体信息
+    spec:
+      containers:
+        - name: home3
+          image: lee/home3:v0.0.1

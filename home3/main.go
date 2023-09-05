@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
@@ -11,14 +13,22 @@ import (
 	"home2/internal/service"
 	"home2/internal/web"
 	"home2/internal/web/middleware"
+	"net/http"
+	"strings"
+	"time"
 )
 
 func main() {
-	db := initDB()
-	server := initWebServer()
-	//注册路由
-	u := initUser(db)
-	u.RegisterRoutes(server)
+	//db := initDB()
+	//server := initWebServer()
+	////注册路由
+	//u := initUser(db)
+	//u.RegisterRoutes(server)
+	server := gin.Default()
+	server.GET("/hello", func(ctx *gin.Context) {
+		ctx.String(http.StatusOK, "来了老弟！")
+	})
+
 	//启动
 	server.Run(":8080")
 }
@@ -26,7 +36,27 @@ func main() {
 func initWebServer() *gin.Engine {
 	server := gin.Default()
 	//跨域可以在这里处理...
+	server.Use(func(ctx *gin.Context) {
+		fmt.Println("The first middleware")
+	})
 
+	server.Use(func(ctx *gin.Context) {
+		fmt.Println("The second middleware")
+	})
+
+	server.Use(cors.New(cors.Config{
+		AllowHeaders:     []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,                    // 是否允许你带 cookie 之类的东西
+		ExposeHeaders:    []string{"x-jwt-token"}, //不设置这个，前端读不到
+		AllowOriginFunc: func(origin string) bool {
+			if strings.HasPrefix(origin, "http://localhost") {
+				//你的开发环境
+				return true
+			}
+			return strings.Contains(origin, "your company.com")
+		},
+		MaxAge: 12 * time.Hour,
+	}))
 	//登陆之后保存登陆信息 步骤1
 	//store := cookie.NewStore([]byte("secret"))
 	//store := memstore.NewStore([]byte("WbeWraNhhon7NxWP7w9WSKMLzZ8cTiwM"), []byte("YHgJ7VQuszth64EuHphVSYVN9SY9NA76"))
@@ -44,7 +74,11 @@ func initWebServer() *gin.Engine {
 	server.Use(sessions.Sessions("mysession", store))
 
 	//登陆之后的校验 - 登陆之后保存登陆信息 步骤3
-	server.Use(middleware.NewLoginMiddlewareBuilder().
+	//server.Use(middleware.NewLoginMiddlewareBuilder().
+	//	IgnorePaths("/users/login").
+	//	IgnorePaths("/users/signup").Build())
+
+	server.Use(middleware.NewLoginJWTMiddlewareBuilder().
 		IgnorePaths("/users/login").
 		IgnorePaths("/users/signup").Build())
 	return server
