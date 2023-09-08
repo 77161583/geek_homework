@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: home3-live-mysql
+  labels:
+    app: home3-live-mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: home3-live-mysql
+  template:
+    metadata:
+      name: home3-live-mysql
+      labels:
+        app: home3-live-mysql
+    spec:
+      containers:
+        - name: home3-live-mysql
+          image: mysql:8.0
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: root
+          imagePullPolicy: IfNotPresent
+          #配置持久化
+          volumeMounts:
+            - mountPath: /mysql
+#              pod里面有很多volumes，我要用哪个，要和下面一一对应
+              name: mysql-storage
+          ports:
+            - containerPort: 3306
+#        - name: home3-live-hadoop
+      restartPolicy: Always
+      volumes:
+        - name: mysql-storage
+          persistentVolumeClaim:
+            claimName: home3-mysql-live-claim
+#        - name: hadoop-storage
+#          persistentVolumeClaim:
+#            claimName: home3-hadoop-live-claim
+      
