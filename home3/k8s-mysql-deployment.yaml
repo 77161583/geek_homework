@@ -24,7 +24,9 @@ spec:
           imagePullPolicy: IfNotPresent
           #配置持久化
           volumeMounts:
-            - mountPath: /mysql
+            # 这里一定要对应 mysql 数据存储的位置
+            # 通过 mysql 的配置可以更改这个目录
+            - mountPath: /var/lib/mysql
 #              pod里面有很多volumes，我要用哪个，要和下面一一对应
               name: mysql-storage
           ports:

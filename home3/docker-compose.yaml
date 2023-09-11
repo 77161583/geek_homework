@@ -9,8 +9,8 @@ services:
       #      设置初始化脚本
       - ./script/mysql/:/docker-entrypoint-initdb.d/
     ports:
-      #      注意这里我映射为了 13316 端口
-      - "13316:3306"
+      #      注意这里我映射为了 13317 端口
+      - "13317:3306"
   redis:
     image: 'bitnami/redis:latest'
     environment:

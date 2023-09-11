@@ -1,0 +1,16 @@
+apiVersion: v1
+# 这个指多是 我 k8s 有哪些 Volume
+kind: PersistentVolume
+metadata:
+  name: my-local-pv
+spec:
+  storageClassName: suibian
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/live"
+
+
+  
