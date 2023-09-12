@@ -3,7 +3,6 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   #这个是指我 mysql 要用多东西
-  #我 K8S 有什么？？
   name: home3-mysql-live-claim
 spec:
   #这个可以随便

@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: home3-live-redis
+  labels:
+    app: home3-live-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: home3-live-redis
+  template:
+    metadata:
+      name: home3-live-redis
+      labels:
+        app: home3-live-redis
+    spec:
+      containers:
+        - name: home3-live-redis
+          image: redis:latest
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      

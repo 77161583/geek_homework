@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: home3-live-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    #当host 是live.home3.com， 命中这条
+    - host: live.home3.com
+      http:
+        paths:
+#          - 请求路径是 / 的时候
+#          - 将流量转发到后面的 home3-live 服务上
+#          - 端口81
+          - backend:
+              service:
+                name: home3-live
+                port:
+                  number: 81
+            pathType: Prefix
+            path: /
+
+
