@@ -4,27 +4,26 @@ import (
 	"fmt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/redis"
+	"github.com/gin-contrib/sessions/memstore"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"home2/internal/repository"
-	"home2/internal/repository/dao"
-	"home2/internal/service"
-	"home2/internal/web"
-	"home2/internal/web/middleware"
+	"home3/internal/repository"
+	"home3/internal/repository/dao"
+	"home3/internal/service"
+	"home3/internal/web"
+	middleware "home3/internal/web/middleware"
 	"net/http"
 	"strings"
 	"time"
 )
 
 func main() {
-	//db := initDB()
-	//server := initWebServer()
-	////注册路由
-	//u := initUser(db)
-	//u.RegisterRoutes(server)
-	server := gin.Default()
+	db := initDB()
+	server := initWebServer()
+	//注册路由
+	u := initUser(db)
+	u.RegisterRoutes(server)
 	server.GET("/hello", func(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "来了老弟！")
 	})
@@ -42,6 +41,11 @@ func initWebServer() *gin.Engine {
 	server.Use(func(ctx *gin.Context) {
 		fmt.Println("The second middleware")
 	})
+
+	//redisClient := redis.NewClient(&redis.Options{
+	//	Addr: config.Config.Redis.Addr,
+	//})
+	//server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build())
 
 	server.Use(cors.New(cors.Config{
 		AllowHeaders:     []string{"Content-Type", "Authorization"},
@@ -63,11 +67,13 @@ func initWebServer() *gin.Engine {
 	//第二个参数连接方式
 	//第三第四，端口号，密码
 	//五六就是两个key
-	store, err := redis.NewStore(16, "tcp", "localhost:6379", "",
-		[]byte("WbeWraNhhon7NxWP7w9WSKMLzZ8cTiwM"), []byte("YHgJ7VQuszth64EuHphVSYVN9SY9NA76"))
-	if err != nil {
-		panic(err)
-	}
+	store := memstore.NewStore([]byte("WbeWraNhhon7NxWP7w9WSKMLzZ8cTiwM"),
+		[]byte("YHgJ7VQuszth64EuHphVSYVN9SY9NA76"))
+	//store, err := redis.NewStore(16, "tcp", "localhost:6379", "",
+	//	[]byte("WbeWraNhhon7NxWP7w9WSKMLzZ8cTiwM"), []byte("YHgJ7VQuszth64EuHphVSYVN9SY9NA76"))
+	//if err != nil {
+	//	panic(err)
+	//}
 
 	//myStore := &sqlx_store.Store{}
 	server.Use(sessions.Sessions("mysession", store))
